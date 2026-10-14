@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .tilt-in {
+    animation: tiltIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tiltIn {
+  from { opacity: 0; transform: rotate3d(1, 1, 0, 15deg) translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: rotate3d(1, 1, 0, 0deg) translateY(0) scale(1); }
+}
