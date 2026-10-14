@@ -12,24 +12,20 @@ const ShareModal = ({ file, onClose }) => {
   const handleCreateShare = async () => {
     setIsLoading(true);
     try {
-      // --- THIS IS THE FIX ---
-      // We need to use file._id (with an underscore) instead of file.id
+      const fileId = file._id || file.id;
       const result = await apiClient.createShare(
-        file._id,
-        expiresIn ? parseInt(expiresIn) : undefined,
+        fileId,
+        expiresIn ? parseInt(expiresIn, 10) : undefined,
         password || undefined
       );
       
-      // Also, update the shareUrl to point to the frontend, not the backend API
-      const frontendOrigin = process.env.NODE_ENV === 'production'
-        ? (import.meta.env.VITE_FRONTEND_URL || window.location.origin)
+      const frontendOrigin = (import.meta.env.VITE_FRONTEND_URL && import.meta.env.VITE_FRONTEND_URL !== 'null')
+        ? import.meta.env.VITE_FRONTEND_URL.replace(/\/+$/, '')
         : window.location.origin;
-      const frontendUrl = `${frontendOrigin.replace(/\/+$/, '')}/share/${result.token}`;
+      const frontendUrl = `${frontendOrigin}/share/${result.token}`;
       setShareUrl(frontendUrl);
-      
     } catch (error) {
       console.error('Failed to create share:', error);
-      // You could add a toast notification here for the error
     } finally {
       setIsLoading(false);
     }

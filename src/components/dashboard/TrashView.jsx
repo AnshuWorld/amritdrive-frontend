@@ -21,27 +21,31 @@ const TrashView = ({ trashItems, onRestore, onPermanentDelete, onEmptyTrash }) =
         </div>
       ) : (
         <div className="space-y-2">
-          {allItems.map((item) => (
-            <div key={item._id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-              <div className="flex items-center space-x-3">
-                {item.size === undefined ? <Folder className="w-6 h-6 text-gray-400" /> : <File className="w-6 h-6 text-gray-400" />}
-                <div>
-                  <div className="font-medium text-gray-900">{item.name}</div>
-                  <div className="text-sm text-gray-500">
-                    {item.size === undefined ? 'Folder' : `File • ${formatFileSize(item.size)}`}
+          {allItems.map((item) => {
+            const isFile = Boolean(item.filePath || item.mimetype !== undefined);
+            const itemType = isFile ? 'file' : 'folder';
+            return (
+              <div key={item._id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                <div className="flex items-center space-x-3">
+                  {!isFile ? <Folder className="w-6 h-6 text-gray-400" /> : <File className="w-6 h-6 text-gray-400" />}
+                  <div>
+                    <div className="font-medium text-gray-900">{item.name}</div>
+                    <div className="text-sm text-gray-500">
+                      {!isFile ? 'Folder' : `File • ${formatFileSize(item.size)}`}
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <button onClick={() => onRestore(itemType, item._id, item.name)} className="text-blue-600 hover:text-blue-700 p-2" title="Restore">
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => onPermanentDelete(itemType, item._id, item.name)} className="text-red-600 hover:text-red-700 p-2" title="Delete permanently">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <button onClick={() => onRestore(item.size === undefined ? 'folder' : 'file', item._id, item.name)} className="text-blue-600 hover:text-blue-700 p-2" title="Restore">
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-                <button onClick={() => onPermanentDelete(item.size === undefined ? 'folder' : 'file', item._id, item.name)} className="text-red-600 hover:text-red-700 p-2" title="Delete permanently">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

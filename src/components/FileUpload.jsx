@@ -6,6 +6,7 @@ const FileUpload = ({ folderId, onUploadComplete, onClose }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef(null);
 
   const handleFileUpload = async (files) => {
@@ -13,17 +14,14 @@ const FileUpload = ({ folderId, onUploadComplete, onClose }) => {
 
     setIsUploading(true);
     setUploadProgress(0); // Reset progress for new upload
+    setErrorMessage('');
 
     try {
-      // We are handling a single file upload for simplicity as in the original code.
-      // To handle multiple files, you would loop through the `files` array.
       const file = files[0]; 
-      
-      // The original code didn't have a progress indicator for the actual upload,
-      // so we'll simulate it. For real progress, you'd need XMLHttpRequest.
       setUploadProgress(50); // Simulate progress
       
-      const result = await apiClient.uploadFile(file, folderId);
+      const cleanFolderId = (folderId && folderId !== 'null' && folderId !== 'undefined') ? folderId : null;
+      const result = await apiClient.uploadFile(file, cleanFolderId);
       
       setUploadProgress(100);
       onUploadComplete(result.storageInfo);
@@ -34,7 +32,7 @@ const FileUpload = ({ folderId, onUploadComplete, onClose }) => {
 
     } catch (error) {
       console.error('Upload failed:', error);
-      // Here you could call a function to show an error toast
+      setErrorMessage(error.message || 'Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -60,6 +58,11 @@ const FileUpload = ({ folderId, onUploadComplete, onClose }) => {
 
   return (
     <div className="space-y-4">
+      {errorMessage && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {errorMessage}
+        </div>
+      )}
       <div
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
           isDragging

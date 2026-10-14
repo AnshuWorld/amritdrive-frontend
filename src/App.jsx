@@ -79,7 +79,8 @@ function App() {
         {/* Public Share Page Route */}
         <Route path="/share/:token" element={<PublicSharePage />} />
 
-        {/* Google OAuth Callback Route */}
+        {/* Google OAuth Callback Routes */}
+        <Route path="/auth-success" element={<GoogleAuthHandler onLogin={handleLogin} />} />
         <Route path="/dashboard" element={user ? <Navigate to="/" /> : <GoogleAuthHandler onLogin={handleLogin} />} />
 
         {/* Authentication Routes */}

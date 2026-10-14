@@ -1,5 +1,6 @@
-const apiHost = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace(/\/+$/, '')
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const apiHost = (rawApiUrl && rawApiUrl !== 'null' && rawApiUrl !== 'undefined')
+  ? rawApiUrl.replace(/\/+$/, '')
   : '';
 
 const API_BASE = apiHost ? `${apiHost}/api` : '/api';
@@ -11,11 +12,12 @@ class APIClient {
     return localStorage.getItem('jwt_token');
   }
 
-  getAuthHeaders() {
+  getAuthHeaders(includeContentType = true) {
     const token = this.getAuthToken();
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    const headers = {};
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
@@ -83,9 +85,13 @@ class APIClient {
 
   async getFolders(parentId) {
     const params = new URLSearchParams();
-    params.append('parentId', parentId || '');
-    const response = await fetch(`${API_BASE}/folders?${params}`, {
-      headers: this.getAuthHeaders(),
+    if (parentId && parentId !== 'null' && parentId !== 'undefined') {
+      params.append('parentId', parentId);
+    }
+    const queryStr = params.toString();
+    const url = queryStr ? `${API_BASE}/folders?${queryStr}` : `${API_BASE}/folders`;
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders(false),
     });
     return this.handleResponse(response);
   }
@@ -125,18 +131,20 @@ class APIClient {
       page: page.toString(),
       limit: limit.toString(),
     });
-    params.append('folderId', folderId || '');
+    if (folderId && folderId !== 'null' && folderId !== 'undefined') {
+      params.append('folderId', folderId);
+    }
     if (search) params.append('search', search);
 
     const response = await fetch(`${API_BASE}/files?${params}`, {
-      headers: this.getAuthHeaders(),
+      headers: this.getAuthHeaders(false),
     });
     return this.handleResponse(response);
   }
 
   async downloadFile(fileId) {
     const response = await fetch(`${API_BASE}/files/${fileId}/download`, {
-      headers: this.getAuthHeaders(),
+      headers: this.getAuthHeaders(false),
     });
     // For downloads, we return the raw response to process the blob
     return response;

@@ -38,15 +38,18 @@ const DashboardPage = ({ user, onLogout }) => {
   const {
     currentFolderId, folders, files, trashItems, sharedLinks, storageInfo,
     breadcrumbs, searchQuery, setSearchQuery, navigateToFolder, navigateToBreadcrumb,
-    refreshData, loadExplorerData
+    refreshData
   } = useFileManager(currentView);
 
   const showToast = (message, type = 'success') => setToast({ message, type });
 
   // Event Handlers
   const handleLogout = async () => {
-    try { await apiClient.logout(); }
-    catch (error) { console.error("Logout failed on server but proceeding on client."); }
+    try { 
+      await apiClient.logout(); 
+    } catch { 
+      console.error("Logout failed on server but proceeding on client."); 
+    }
     onLogout();
   };
 
@@ -80,18 +83,23 @@ const DashboardPage = ({ user, onLogout }) => {
   
   const handleDownload = async (file) => {
     try {
-        const response = await apiClient.downloadFile(file.id);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = file.name;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    } catch (error) {
-        showToast('Download failed', 'error');
+      const fileId = file._id || file.id;
+      const response = await apiClient.downloadFile(fileId);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Download failed');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      showToast(err.message || 'Download failed', 'error');
     }
   };
 
@@ -191,11 +199,11 @@ const DashboardPage = ({ user, onLogout }) => {
       {contextMenu && (
         <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={() => setContextMenu(null)}>
             {contextMenu.item.type === 'file' && (
-                <button onClick={() => { const file = files.find(f => f._id === contextMenu.item.id); if (file) handleDownload(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><Download className="w-4 h-4" /><span>Download</span></button>
+                <button onClick={() => { const file = files.find(f => (f._id || f.id) === contextMenu.item.id); if (file) handleDownload(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><Download className="w-4 h-4" /><span>Download</span></button>
             )}
             <button onClick={() => { setShowRenameModal({ id: contextMenu.item.id, name: contextMenu.item.name, type: contextMenu.item.type }); setRenameValue(contextMenu.item.name); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><EditIcon className="w-4 h-4" /><span>Rename</span></button>
             {contextMenu.item.type === 'file' && (
-                <button onClick={() => { const file = files.find(f => f._id === contextMenu.item.id); if (file) setShowShareModal(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><Share2 className="w-4 h-4" /><span>Share</span></button>
+                <button onClick={() => { const file = files.find(f => (f._id || f.id) === contextMenu.item.id); if (file) setShowShareModal(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><Share2 className="w-4 h-4" /><span>Share</span></button>
             )}
             <button onClick={() => { handleMoveToTrash(contextMenu.item.type, contextMenu.item.id, contextMenu.item.name); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"><Trash2 className="w-4 h-4" /><span>Move to Trash</span></button>
         </ContextMenu>

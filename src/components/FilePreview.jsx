@@ -8,32 +8,46 @@ const FilePreview = ({ file, onBack }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let currentUrl = null;
+    let isMounted = true;
+
     setObjectUrl(null);
     setIsLoading(true);
     setError('');
 
     const fetchFile = async () => {
       try {
-        const response = await apiClient.downloadFile(file.id);
+        const fileId = file?._id || file?.id;
+        if (!fileId) {
+          throw new Error("File ID is missing.");
+        }
+        const response = await apiClient.downloadFile(fileId);
         if (!response.ok) {
           throw new Error("File not found or access denied.");
         }
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setObjectUrl(url);
+        if (isMounted) {
+          currentUrl = URL.createObjectURL(blob);
+          setObjectUrl(currentUrl);
+        }
       } catch (err) {
-        setError('Could not load file preview.');
-        console.error(err);
+        if (isMounted) {
+          setError('Could not load file preview.');
+          console.error(err);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchFile();
 
     return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
+      isMounted = false;
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
       }
     };
   }, [file]);
