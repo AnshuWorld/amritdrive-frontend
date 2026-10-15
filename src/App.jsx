@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import PublicSharePage from './pages/PublicSharePage';
+import PublicFolderPage from './pages/PublicFolderPage';
 import LandingPage from './pages/LandingPage';
 
 // A helper component to handle the Google OAuth redirect
@@ -76,7 +77,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Share Page Route */}
+        {/* Public Share Page Routes */}
+        <Route path="/share/folder/:token" element={<PublicFolderPage />} />
         <Route path="/share/:token" element={<PublicSharePage />} />
 
         {/* Google OAuth Callback Routes */}

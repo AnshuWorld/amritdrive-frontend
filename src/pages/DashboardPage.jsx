@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Edit2 as EditIcon, Share2, Trash2 } from 'lucide-react';
+import { Download, Edit2 as EditIcon, Share2, Trash2, Globe, Lock, Copy } from 'lucide-react';
 
 // API and Helpers
 import apiClient from '../api/apiClient';
@@ -32,6 +32,7 @@ const DashboardPage = ({ user, onLogout }) => {
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(null);
   const [showShareModal, setShowShareModal] = useState(null);
+  const [showFolderShareModal, setShowFolderShareModal] = useState(null);
   const [renameValue, setRenameValue] = useState('');
 
   // Custom hook for all file management logic
@@ -109,6 +110,29 @@ const DashboardPage = ({ user, onLogout }) => {
       showToast(`${name} moved to trash`);
       refreshData();
     } catch (error) { showToast(error.message, 'error'); }
+  };
+
+  const handleToggleFolderVisibility = async (folderId, isPublic) => {
+    try {
+      const data = await apiClient.toggleFolderVisibility(folderId, isPublic);
+      const updatedFolder = data.folder;
+      if (updatedFolder?.isPublic) {
+        setShowFolderShareModal(updatedFolder);
+        showToast('Folder is now public! Share link created.');
+      } else {
+        showToast('Folder permission set to Private.');
+      }
+      refreshData();
+    } catch (error) {
+      showToast(error.message || 'Failed to update folder permission', 'error');
+    }
+  };
+
+  const handleCopyFolderLink = (shareToken) => {
+    const url = `${window.location.origin}/share/folder/${shareToken}`;
+    navigator.clipboard.writeText(url)
+      .then(() => showToast('Public folder link copied to clipboard!'))
+      .catch(() => showToast('Public link: ' + url));
   };
 
   const handleRestoreFromTrash = async (type, id, name) => {
@@ -198,14 +222,74 @@ const DashboardPage = ({ user, onLogout }) => {
       {/* --- Modals and Context Menu --- */}
       {contextMenu && (
         <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={() => setContextMenu(null)}>
+            {/* FILE ONLY: Download */}
             {contextMenu.item.type === 'file' && (
-                <button onClick={() => { const file = files.find(f => (f._id || f.id) === contextMenu.item.id); if (file) handleDownload(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><Download className="w-4 h-4" /><span>Download</span></button>
+                <button onClick={() => { const file = files.find(f => (f._id || f.id) === contextMenu.item.id); if (file) handleDownload(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                  <Download className="w-4 h-4 text-gray-500" />
+                  <span>Download</span>
+                </button>
             )}
-            <button onClick={() => { setShowRenameModal({ id: contextMenu.item.id, name: contextMenu.item.name, type: contextMenu.item.type }); setRenameValue(contextMenu.item.name); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><EditIcon className="w-4 h-4" /><span>Rename</span></button>
+
+            {/* FOLDER & FILE: Rename */}
+            <button onClick={() => { setShowRenameModal({ id: contextMenu.item.id, name: contextMenu.item.name, type: contextMenu.item.type }); setRenameValue(contextMenu.item.name); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+              <EditIcon className="w-4 h-4 text-gray-500" />
+              <span>Rename</span>
+            </button>
+
+            {/* FOLDER ONLY: Make Public / Make Private Permission */}
+            {contextMenu.item.type === 'folder' && (
+              <>
+                {contextMenu.item.isPublic ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleCopyFolderLink(contextMenu.item.shareToken);
+                        setContextMenu(null);
+                      }}
+                      className="flex items-center space-x-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 w-full text-left"
+                    >
+                      <Copy className="w-4 h-4 text-blue-500" />
+                      <span>Copy Public Link</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleToggleFolderVisibility(contextMenu.item.id, false);
+                        setContextMenu(null);
+                      }}
+                      className="flex items-center space-x-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 w-full text-left"
+                    >
+                      <Lock className="w-4 h-4 text-amber-600" />
+                      <span>Make Private</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      handleToggleFolderVisibility(contextMenu.item.id, true);
+                      setContextMenu(null);
+                    }}
+                    className="flex items-center space-x-2 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 w-full text-left"
+                  >
+                    <Globe className="w-4 h-4 text-emerald-600" />
+                    <span>Make Public</span>
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* FILE ONLY: Share */}
             {contextMenu.item.type === 'file' && (
-                <button onClick={() => { const file = files.find(f => (f._id || f.id) === contextMenu.item.id); if (file) setShowShareModal(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"><Share2 className="w-4 h-4" /><span>Share</span></button>
+                <button onClick={() => { const file = files.find(f => (f._id || f.id) === contextMenu.item.id); if (file) setShowShareModal(file); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                  <Share2 className="w-4 h-4 text-gray-500" />
+                  <span>Share</span>
+                </button>
             )}
-            <button onClick={() => { handleMoveToTrash(contextMenu.item.type, contextMenu.item.id, contextMenu.item.name); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"><Trash2 className="w-4 h-4" /><span>Move to Trash</span></button>
+
+            {/* FOLDER & FILE: Move to Trash */}
+            <button onClick={() => { handleMoveToTrash(contextMenu.item.type, contextMenu.item.id, contextMenu.item.name); setContextMenu(null); }} className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left border-t border-gray-100 mt-1 pt-1">
+              <Trash2 className="w-4 h-4" />
+              <span>Move to Trash</span>
+            </button>
         </ContextMenu>
       )}
 
@@ -248,6 +332,65 @@ const DashboardPage = ({ user, onLogout }) => {
 
       <Modal isOpen={!!showShareModal} onClose={() => setShowShareModal(null)} title="Share File">
         {showShareModal && <ShareModal file={showShareModal} onClose={() => setShowShareModal(null)} />}
+      </Modal>
+
+      <Modal isOpen={!!showFolderShareModal} onClose={() => setShowFolderShareModal(null)} title="Public Folder Share">
+        {showFolderShareModal && (
+          <div className="space-y-4">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <div className="flex items-center space-x-2 text-emerald-800 font-semibold mb-1">
+                <Globe className="w-5 h-5 text-emerald-600" />
+                <span>{showFolderShareModal.name}</span>
+              </div>
+              <p className="text-xs text-emerald-700">
+                This folder is now public. Anyone with this link can view and download all files inside this folder.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Shareable Folder Link
+              </label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/share/folder/${showFolderShareModal.shareToken}`}
+                  className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-300 rounded-md select-all text-gray-700 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleCopyFolderLink(showFolderShareModal.shareToken)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md flex items-center space-x-1 whitespace-nowrap cursor-pointer transition-colors"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>Copy Link</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => {
+                  handleToggleFolderVisibility(showFolderShareModal._id || showFolderShareModal.id, false);
+                  setShowFolderShareModal(null);
+                }}
+                className="text-xs text-red-600 hover:text-red-700 font-medium flex items-center space-x-1 cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Revoke & Make Private</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFolderShareModal(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

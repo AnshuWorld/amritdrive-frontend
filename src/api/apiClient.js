@@ -105,6 +105,24 @@ class APIClient {
     return this.handleResponse(response);
   }
 
+  async toggleFolderVisibility(folderId, isPublic) {
+    const response = await fetch(`${API_BASE}/folders/${folderId}/visibility`, {
+      method: 'PATCH',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ isPublic }),
+    });
+    return this.handleResponse(response);
+  }
+
+  async getPublicFolder(shareToken) {
+    const response = await fetch(`${API_BASE}/folders/public/${shareToken}`);
+    return this.handleResponse(response);
+  }
+
+  async downloadPublicFolderFile(shareToken, fileId) {
+    return fetch(`${API_BASE}/folders/public/${shareToken}/files/${fileId}/download`);
+  }
+
   // File endpoints
   async uploadFile(file, folderId, name) {
     const formData = new FormData();

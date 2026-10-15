@@ -1,5 +1,5 @@
 import React from 'react';
-import { Folder, File } from 'lucide-react';
+import { Folder, File, Globe, Lock } from 'lucide-react';
 import { formatFileSize } from '../../utils/helpers';
 
 const FileExplorer = ({ folders, files, breadcrumbs, onNavigateToBreadcrumb, onNavigateToFolder, onFileClick, onContextMenu }) => {
@@ -31,7 +31,41 @@ const FileExplorer = ({ folders, files, breadcrumbs, onNavigateToBreadcrumb, onN
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {folders.map((folder) => (
-              <div key={folder._id} onDoubleClick={() => onNavigateToFolder(folder._id, folder.name)} onContextMenu={(e) => { e.preventDefault(); onContextMenu(e, { id: folder._id, name: folder.name, type: 'folder' }); }} className="group p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-sm cursor-pointer transition-all flex flex-col items-center text-center">
+              <div
+                key={folder._id}
+                onDoubleClick={() => onNavigateToFolder(folder._id, folder.name)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  onContextMenu(e, {
+                    id: folder._id,
+                    name: folder.name,
+                    type: 'folder',
+                    isPublic: Boolean(folder.isPublic),
+                    shareToken: folder.shareToken
+                  });
+                }}
+                className="group relative p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:shadow-sm cursor-pointer transition-all flex flex-col items-center text-center bg-white"
+              >
+                {/* Public / Private Badge */}
+                <div className="absolute top-2 right-2 flex items-center">
+                  {folder.isPublic ? (
+                    <span
+                      title="Public folder - Accessible via link"
+                      className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs"
+                    >
+                      <Globe className="w-2.5 h-2.5" />
+                      <span>Public</span>
+                    </span>
+                  ) : (
+                    <span
+                      title="Private folder"
+                      className="opacity-0 group-hover:opacity-50 transition-opacity text-gray-400"
+                    >
+                      <Lock className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
+
                 <Folder className="w-12 h-12 text-blue-500 mb-2 flex-shrink-0" />
                 <span className="text-sm font-medium text-gray-900 break-words w-full">{folder.name}</span>
               </div>
