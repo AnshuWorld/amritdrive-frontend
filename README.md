@@ -65,6 +65,7 @@ frontend/
 │   │   ├── DashboardPage.jsx# Main protected application page
 │   │   ├── LandingPage.jsx  # Public marketing page for non-logged-in visitors
 │   │   ├── LoginPage.jsx    # Email & password sign-in + Google OAuth button
+│   │   ├── PublicFolderPage.jsx # Public viewer & downloader for shared folders
 │   │   ├── PublicSharePage.jsx # Public download page for shared link visitors
 │   │   └── RegisterPage.jsx # New user registration page
 │   ├── utils/
