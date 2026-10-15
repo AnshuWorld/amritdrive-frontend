@@ -234,8 +234,8 @@ class APIClient {
   }
 
   // Share endpoints
-  async createShare(fileId, expiresIn, password) {
-    const body = { fileId };
+  async createShare(fileId, expiresIn, password, permission = 'viewer') {
+    const body = { fileId, permission };
     if (expiresIn) body.expiresIn = expiresIn;
     if (password) body.password = password;
 
@@ -243,6 +243,18 @@ class APIClient {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(body),
+    });
+    return this.handleResponse(response);
+  }
+
+  // Edit shared file metadata (requires Editor permission)
+  async editSharedFile(token, updates, password) {
+    const response = await fetch(`${API_BASE}/share/${token}/edit`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...updates, password }),
     });
     return this.handleResponse(response);
   }
